@@ -1,1 +1,8 @@
-.env\n.venv\ntests\n__pycache__\n
+.env
+.git
+.gitignore
+__pycache__
+.venv
+.pytest_cache
+.vercel
+*.pyc

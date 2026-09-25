@@ -1,11 +1,14 @@
 """Groq (fast open-model hosting) through its OpenAI-compatible API, plus tolerant JSON parsing."""
 
 import json
+import logging
 import os
 import re
 from typing import Protocol
 
 from openai import OpenAI, OpenAIError
+
+log = logging.getLogger("nyayaai")
 
 
 class LLMError(RuntimeError):
@@ -37,6 +40,7 @@ class GroqClient:
                 messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
             )
         except OpenAIError as e:
+            log.error("Groq API call failed: %r", e)
             raise LLMError("The AI service could not answer. Please try again.") from e
         return r.choices[0].message.content or ""
 

@@ -1,113 +1,63 @@
-"use strict";
+let documentId = null;
 const $ = (id) => document.getElementById(id);
-const chunks = new Map();
-let docId = null;
 
-function el(tag, text, cls) {
-  const n = document.createElement(tag);
-  if (text) n.textContent = text; // textContent only: document text is never parsed as HTML
-  if (cls) n.className = cls;
-  return n;
+function setStatus(message, error = false) {
+  $("uploadStatus").textContent = message;
+  $("uploadStatus").style.color = error ? "#b42318" : "";
 }
 
-function cites(ids) {
-  const box = el("span");
-  for (const id of ids) {
-    const c = chunks.get(id);
-    if (!c) continue;
-    const b = el("button", `${c.label}, page ${c.page}`, "chip");
-    b.type = "button";
-    b.setAttribute("aria-label", `Show source text for ${c.label}, page ${c.page}`);
-    b.addEventListener("click", () => showSource(id, true));
-    box.append(b);
-  }
-  return box;
-}
-
-function showSource(id, focus) {
-  const c = chunks.get(id);
-  $("source-meta").textContent = `${c.label}, page ${c.page}`;
-  $("source-text").replaceChildren(el("mark", c.text));
-  if (focus) $("source").focus();
-}
-
-function li(text, ids = []) {
-  const n = el("li", text);
-  n.append(" ", cites(ids));
-  return n;
-}
-
-function fill(id, items, build) {
-  const box = $(id);
-  box.replaceChildren(...items.map(build));
-  box.parentElement.hidden = items.length === 0;
-}
-
-function render(d) {
-  const a = d.analysis;
-  chunks.clear();
-  d.chunks.forEach((c) => chunks.set(c.id, c));
-  $("doc-type").textContent = a.document_type || "Document";
-  $("summary").textContent = a.summary;
-  fill("parties", a.parties, (p) => li(p.role ? `${p.name}, ${p.role}` : p.name));
-  fill("facts", a.key_facts, (f) => li(`${f.label}: ${f.detail}`, f.sources));
-  fill("obligations", a.obligations, (o) => li(o.detail, o.sources));
-  fill("risks", a.risks, (r) => li(`${r.issue}. ${r.why}`, r.sources));
-  $("answer").replaceChildren();
-  $("results").hidden = false;
-  $("doc-type").focus();
-}
-
-async function call(url, opts) {
-  const r = await fetch(url, opts);
-  const body = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    throw new Error(typeof body.detail === "string" ? body.detail : "Something went wrong. Check your input and try again.");
-  }
-  return body;
-}
-
-$("upload-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const btn = $("upload-btn");
+async function upload() {
+  const file = $("file").files[0];
+  if (!file) return setStatus("Please choose a document first.", true);
   const form = new FormData();
-  form.append("file", $("file").files[0]);
-  form.append("language", $("lang").value);
-  btn.disabled = true;
-  $("error").textContent = "";
-  $("status").textContent = "Reading your document. This can take up to a minute.";
+  form.append("file", file);
+  form.append("language", $("language").value);
+  setStatus("Uploading and extracting text...");
+  $("uploadBtn").disabled = true;
   try {
-    const d = await call("/api/documents", { method: "POST", body: form });
-    docId = d.doc_id;
-    render(d);
-    $("results").lang = $("lang").value;
-    $("status").textContent = `Done: ${d.filename}`;
-  } catch (err) {
-    $("status").textContent = "";
-    $("error").textContent = err.message;
+    const res = await fetch("/api/upload", { method: "POST", body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Upload failed.");
+    documentId = data.document_id;
+    setStatus(`Uploaded ${data.filename} — ${data.clause_count} clauses found.`);
+    $("analysis").classList.remove("hidden");
+    $("questions").classList.remove("hidden");
+    $("summary").textContent = "Analyzing document...";
+    $("risks").innerHTML = "<p class='muted'>Analyzing...</p>";
+    await analyze();
+  } catch (e) {
+    setStatus(e.message, true);
   } finally {
-    btn.disabled = false;
+    $("uploadBtn").disabled = false;
+  }
+}
+
+async function analyze() {
+  const res = await fetch(`/api/analyze/${encodeURIComponent(documentId)}`, { method: "POST" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Analysis failed.");
+  $("summary").textContent = data.summary || "No summary was returned.";
+  const risks = Array.isArray(data.risks) ? data.risks : [];
+  $("risks").innerHTML = risks.length ? risks.map(r => `<div class="risk"><strong>${escapeHtml(r.text || "Review this clause")}</strong><div class="citation">${escapeHtml(r.citation || "")}</div></div>`).join("") : "<p class='muted'>No specific risks were returned. Read the document carefully.</p>";
+}
+
+$("uploadBtn").addEventListener("click", upload);
+$("askForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const question = $("question").value.trim();
+  if (!documentId || !question) return;
+  $("answer").textContent = "Thinking...";
+  try {
+    const res = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ document_id: documentId, question, language: $("language").value }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Question failed.");
+    const cites = (data.citations || []).map(c => `<div class="citation">${escapeHtml(c)}</div>`).join("");
+    $("answer").innerHTML = `<div>${escapeHtml(data.answer || "No answer returned.")}</div>${cites}`;
+  } catch (e) {
+    $("answer").textContent = e.message;
   }
 });
 
-$("ask-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const btn = $("ask-btn"), out = $("answer");
-  btn.disabled = true;
-  out.textContent = "Looking through the document.";
-  try {
-    const r = await call(`/api/documents/${docId}/ask`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: $("question").value, language: $("lang").value }),
-    });
-    out.className = r.found ? "" : "not-found";
-    out.replaceChildren(el("p", r.answer), cites(r.citations.map((c) => c.id)), el("br"), el("small", r.disclaimer));
-    if (r.found) showSource(r.citations[0].id, false);
-  } catch (err) {
-    out.className = "not-found";
-    out.textContent = err.message;
-  } finally {
-    btn.disabled = false;
-  }
-});
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
+}
