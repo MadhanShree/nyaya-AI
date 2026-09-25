@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NyayaAI: understand your legal document</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header>
+  <h1>NyayaAI</h1>
+  <p>Upload a legal document. Read it in plain language, and see the exact clause behind every answer.</p>
+</header>
+<p class="notice" role="note"><strong>Information, not legal advice.</strong> NyayaAI can make mistakes. For decisions that matter, talk to a qualified lawyer.</p>
+<main id="main">
+  <section aria-labelledby="upload-h">
+    <h2 id="upload-h">Add your document</h2>
+    <form id="upload-form">
+      <label for="file">PDF, DOCX or TXT, up to 5 MB</label>
+      <input id="file" type="file" accept=".pdf,.docx,.txt" required>
+      <label for="lang">Explain in</label>
+      <select id="lang"><option value="en">English</option><option value="hi">हिन्दी (Hindi)</option><option value="ta">தமிழ் (Tamil)</option></select>
+      <button id="upload-btn" type="submit">Explain this document</button>
+    </form>
+    <p id="status" role="status" aria-live="polite"></p>
+    <p id="error" class="error" role="alert"></p>
+  </section>
+  <div id="results" class="layout" hidden>
+    <div>
+      <section aria-labelledby="doc-type">
+        <h2 id="doc-type" tabindex="-1">Document</h2>
+        <p id="summary"></p>
+      </section>
+      <section hidden><h3>Who is involved</h3><ul id="parties"></ul></section>
+      <section hidden><h3>Key terms and dates</h3><ul id="facts"></ul></section>
+      <section hidden><h3>What each side must do</h3><ul id="obligations"></ul></section>
+      <section hidden><h3>Clauses to read closely</h3><ul id="risks" class="risks"></ul></section>
+      <section aria-labelledby="ask-h">
+        <h2 id="ask-h">Ask about this document</h2>
+        <form id="ask-form">
+          <label for="question">Your question</label>
+          <input id="question" type="text" minlength="3" maxlength="500" required placeholder="When can I end this agreement?">
+          <button id="ask-btn" type="submit">Ask</button>
+        </form>
+        <div id="answer" aria-live="polite"></div>
+      </section>
+    </div>
+    <aside id="source" tabindex="-1" aria-labelledby="source-h">
+      <h2 id="source-h">Source in your document</h2>
+      <p id="source-meta">Select a clause reference to read the original text here.</p>
+      <blockquote id="source-text"></blockquote>
+    </aside>
+  </div>
+</main>
+<script src="/static/app.js" defer></script>
+</body>
+</html>

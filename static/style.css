@@ -1,0 +1,28 @@
+:root{--paper:#F6F7F9;--ink:#12213A;--muted:#4A5872;--rule:#C8D0DD;--mark:#FFD84D;--risk:#A61B1B;--link:#0B4F8A}
+*{box-sizing:border-box}
+body{margin:0 auto;max-width:1100px;padding:1.5rem;background:var(--paper);color:var(--ink);font:1rem/1.6 system-ui,sans-serif}
+h1,h2,h3{font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;line-height:1.25}
+h1{font-size:2.4rem;margin:0}
+header p{color:var(--muted);max-width:60ch;margin:.25rem 0 1rem}
+.notice{border-left:4px solid var(--mark);background:#fff;padding:.6rem .9rem;margin:0 0 1.5rem;max-width:70ch}
+.skip{position:absolute;left:-999px}.skip:focus{left:1rem;top:1rem;background:#fff;padding:.5rem}
+form{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+label{flex-basis:100%;font-weight:600}
+input[type=text]{flex:1 1 16rem;padding:.6rem;border:1px solid var(--muted);border-radius:4px;font:inherit}
+button{font:inherit;cursor:pointer;border-radius:4px}
+form button{background:var(--ink);color:#fff;border:0;padding:.65rem 1.1rem}
+button:disabled{opacity:.6;cursor:wait}
+:focus-visible{outline:3px solid var(--link);outline-offset:2px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 22rem;gap:2rem;margin-top:1rem}
+#source{position:sticky;top:1rem;align-self:start;background:#fff;border:1px solid var(--rule);border-radius:4px;padding:1rem;max-height:90vh;overflow:auto}
+#source-text{margin:0;white-space:pre-wrap}
+mark{background:var(--mark);color:var(--ink);padding:.1em 0;box-decoration-break:clone}
+li{margin-bottom:.6rem}
+.risks li{border-left:4px solid var(--risk);padding-left:.7rem}
+.chip{background:#fff;color:var(--link);border:1px solid var(--link);padding:.25rem .6rem;min-height:2rem;margin:0 .25rem .25rem 0;font-size:.9rem}
+.not-found p{color:var(--muted)}
+.error{color:var(--risk);font-weight:600}
+small{color:var(--muted)}
+[hidden]{display:none!important}
+@media(max-width:800px){.layout{grid-template-columns:1fr}#source{position:static}}
+select{padding:.6rem;border:1px solid var(--muted);border-radius:4px;font:inherit;background:#fff}
