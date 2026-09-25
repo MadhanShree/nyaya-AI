@@ -1,0 +1,1 @@
+from nyayaai.main import app
